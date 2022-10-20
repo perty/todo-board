@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Position testing</title>
+    <style>
+        .header {
+            position: sticky;
+        }
+
+        .column-container {
+            display: flex;
+            width: fit-content;
+        }
+
+        .column-head {
+            border-style: solid;
+            text-align: center;
+            width: 300px;
+        }
+
+        .card-container {
+            display: flex;
+            width: fit-content;
+        }
+
+        .card-column {
+            border-style: solid;
+            width: 300px;
+            min-height: 100px;
+        }
+
+        .card {
+            border-style: solid;
+            border-radius: 5px;
+            height: 150px;
+        }
+    </style>
+</head>
+<body>
+
+<div>
+    <div class="header">
+        <p>Here are some top things</p>
+        <div class="column-container">
+            <div class="column-head">
+                Todo
+            </div>
+            <div class="column-head">
+                Doing
+            </div>
+            <div class="column-head">
+                Done
+            </div>
+        </div>
+    </div>
+    <div class="card-container">
+        <div class="card-column">
+            <div id="card4711" class="card">
+                <p>#4711</p>
+                <p>Here is some text.</p>
+            </div>
+            <div id="card4720" class="card">
+                <p>#4720</p>
+                <p>Another card</p>
+            </div>
+        </div>
+        <div class="card-column">
+
+        </div>
+        <div class="card-column">
+
+        </div>
+    </div>
+</div>
+<script>
+    dragElement(document.getElementById("card4711"));
+
+    function dragElement(elmnt) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        elmnt.onmousedown = dragMouseDown;
+
+        function dragMouseDown(e) {
+            elmnt.style.position = 'absolute';
+            e = e || window.event;
+            e.preventDefault();
+
+            // get the mouse cursor position at startup:
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            // call a function whenever the cursor moves:
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            // calculate the new cursor position:
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            // set the element's new position:
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            /* stop moving when mouse button is released:*/
+            elmnt.style.position = 'static';
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
+    }
+</script>
+</body>
+</html>
