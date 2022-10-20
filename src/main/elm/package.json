@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "name": "todo-board",
+  "scripts": {
+    "postinstall": "elm-tooling install",
+    "start": "elm-watch hot",
+    "build": "elm-watch make --optimize",
+    "test": "elm-test-rs",
+    "dist": "copyfiles app.js index.html ../../main/resources/static"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "elm-tooling": "^1.10.0",
+    "elm-watch": "^1.0.2"
+  }
+}
