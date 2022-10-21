@@ -18,9 +18,7 @@ type Msg
 
 
 type alias Model =
-    { scale : Float
-    , graphElementPosition : Position
-    , dragState : DragState
+    { dragState : DragState
     , inColumn : Maybe Column
     , startPos : Position
     , cards : Cards
@@ -69,9 +67,7 @@ init _ =
 
 initialModel : Model
 initialModel =
-    { scale = 1.0
-    , graphElementPosition = Position 0 0
-    , inColumn = Nothing
+    { inColumn = Nothing
     , dragState = Static
     , startPos = Position 0 0
     , cards = initialCards
