@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Browser.Events
-import Dict exposing (Dict)
+import Dict exposing (Dict, insert)
 import Html exposing (div, p, text)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (on, onMouseEnter)
@@ -159,7 +159,11 @@ update msg model =
             ( { model | inColumn = Just column, cards = newCards }, Cmd.none )
 
         CardEntered cardId ->
-            ( { model | aboveCard = Just cardId }, Cmd.none )
+            let
+                newCards =
+                    setOrder model cardId
+            in
+            ( { model | aboveCard = Just cardId, cards = newCards }, Cmd.none )
 
 
 setColumn : Cards -> CardId -> Column -> Cards
@@ -170,6 +174,33 @@ setColumn cards nodeId column =
 
         Nothing ->
             cards
+
+
+setOrder : Model -> CardId -> Cards
+setOrder model relativeCardId =
+    let
+        ( movingCardMaybe, goingUp ) =
+            case model.dragState of
+                Static ->
+                    ( Nothing, False )
+
+                Moving cardId position ->
+                    ( findCard cardId model.cards, model.startPos.y > position.y )
+    in
+    case ( findCard relativeCardId model.cards, movingCardMaybe ) of
+        ( Just relativeCard, Just movingCard ) ->
+            if goingUp then
+                model.cards
+                    |> insertCard movingCard.id { movingCard | order = movingCard.order - 1 }
+                    |> insertCard relativeCard.id { relativeCard | order = relativeCard.order + 1 }
+
+            else
+                model.cards
+                    |> insertCard movingCard.id { movingCard | order = movingCard.order + 1 }
+                    |> insertCard relativeCard.id { relativeCard | order = relativeCard.order -  1 }
+
+        _ ->
+            model.cards
 
 
 findCard : CardId -> Cards -> Maybe TodoCard
@@ -217,31 +248,33 @@ viewCardsOfColumn model column =
             Dict.values model.cards
                 |> List.filter (\card -> card.column == column)
                 |> List.sortBy .order
+                |> List.map (viewTodoCard model.dragState)
 
         classes =
             "card-column"
-                ++ (if model.inColumn == Just column && model.dragState /= Static then
+                ++ (if model.inColumn == Just column then
                         " in-column"
 
                     else
                         ""
                    )
     in
-    div [ class classes, onMouseEnter (ColumnEntered column) ]
-        (List.map (viewTodoCard model.dragState) cardsOfColumn)
+    case model.dragState of
+        Static ->
+            div [ class "card-column" ]
+                cardsOfColumn
+
+        Moving _ _ ->
+            div [ class classes, onMouseEnter (ColumnEntered column) ]
+                cardsOfColumn
 
 
 viewTodoCard : DragState -> TodoCard -> Html.Html Msg
 viewTodoCard dragState card =
     let
-        cardInRest =
-            div
-                [ class "card"
-                , on "mousedown" (Decode.map (DragStart card.id) decodeClientPosition)
-                , onMouseEnter (CardEntered card.id)
-                ]
-                [ p [] [ text <| String.fromInt card.id ]
-                ]
+        cardContent =
+            [ p [] [ text <| String.fromInt card.id ]
+            ]
     in
     case dragState of
         Moving nodeId position ->
@@ -252,17 +285,24 @@ viewTodoCard dragState card =
                         , style "left" (String.fromFloat position.x ++ "px")
                         , style "top" (String.fromFloat position.y ++ "px")
                         ]
-                        [ p [] [ text <| String.fromInt card.id ]
-                        ]
+                        cardContent
                     , div [ class "card shadow-card" ]
                         []
                     ]
 
             else
-                cardInRest
+                div
+                    [ class "card"
+                    , onMouseEnter (CardEntered card.id)
+                    ]
+                    cardContent
 
         Static ->
-            cardInRest
+            div
+                [ class "card"
+                , on "mousedown" (Decode.map (DragStart card.id) decodeClientPosition)
+                ]
+                cardContent
 
 
 
