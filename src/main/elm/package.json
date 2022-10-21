@@ -6,7 +6,7 @@
     "start": "elm-watch hot",
     "build": "elm-watch make --optimize",
     "test": "elm-test-rs",
-    "dist": "npm run build; copyfiles app.js index.html ../../main/resources/static"
+    "dist": "npm run build; copyfiles app.js index.html main.css ../../main/resources/static"
   },
   "devDependencies": {
     "copyfiles": "^2.4.1",
