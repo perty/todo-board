@@ -186,6 +186,19 @@ view model =
         [ div [ class "header" ]
             [ p [] [ text "Something" ]
             ]
+        , div [ class "column-container" ]
+            [ div [ class "column-head" ]
+                [ text "Todo"
+                ]
+            , div
+                [ class "column-head" ]
+                [ text "Doing"
+                ]
+            , div
+                [ class "column-head" ]
+                [ text "Done"
+                ]
+            ]
         , div [ class "card-container" ]
             (List.map (viewCardsOfColumn model) allColumns)
         ]
@@ -231,13 +244,16 @@ viewTodoCard dragState card =
                     nodeId == card.id
     in
     if dragging then
-        div
-            [ class classes
-            , on "mousedown" (Decode.map (DragStart card.id) decodeClientPosition)
-            , style "left" (String.fromFloat card.position.x ++ "px")
-            , style "top" (String.fromFloat card.position.y ++ "px")
-            ]
-            [ p [] [ text <| String.fromInt card.id ]
+        div []
+            [ div
+                [ class classes
+                , style "left" (String.fromFloat card.position.x ++ "px")
+                , style "top" (String.fromFloat card.position.y ++ "px")
+                ]
+                [ p [] [ text <| String.fromInt card.id ]
+                ]
+            , div [ class "card shadow-card" ]
+                []
             ]
 
     else

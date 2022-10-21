@@ -35,6 +35,13 @@
     height: 150px;
 }
 
+.shadow-card {
+    border-style: none;
+    border-radius: 5px;
+    height: 150px;
+    background-color: lightgray;
+}
+
 .card-dragged {
     background-color: aliceblue;
     position: absolute;
