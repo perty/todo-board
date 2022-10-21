@@ -10,23 +10,25 @@ import Json.Decode as Decode
 
 
 type Msg
-    = DragStart NodeId Position
-    | DragMove NodeId Bool Position
-    | DragStop NodeId
+    = DragStart CardId Position
+    | DragMove CardId Bool Position
+    | DragStop CardId
     | ColumnEntered Column
+    | CardEntered CardId
     | ClickedCard
 
 
 type alias Model =
     { dragState : DragState
     , inColumn : Maybe Column
+    , aboveCard : Maybe CardId
     , startPos : Position
     , cards : Cards
     }
 
 
 type alias Cards =
-    Dict NodeId TodoCard
+    Dict CardId TodoCard
 
 
 type alias Position =
@@ -37,13 +39,13 @@ type alias Position =
 
 type DragState
     = Static
-    | Moving NodeId
+    | Moving CardId Position
 
 
 type alias TodoCard =
     { column : Column
-    , id : NodeId
-    , position : Position
+    , id : CardId
+    , order : Int
     }
 
 
@@ -51,7 +53,7 @@ type alias Column =
     String
 
 
-type alias NodeId =
+type alias CardId =
     Int
 
 
@@ -68,6 +70,7 @@ init _ =
 initialModel : Model
 initialModel =
     { inColumn = Nothing
+    , aboveCard = Nothing
     , dragState = Static
     , startPos = Position 0 0
     , cards = initialCards
@@ -80,13 +83,19 @@ initialCards =
         [ ( 1
           , { id = 1
             , column = "todo"
-            , position = Position 0 0
+            , order = 2
             }
           )
         , ( 2
           , { id = 2
             , column = "todo"
-            , position = Position 0 0
+            , order = 1
+            }
+          )
+        , ( 3
+          , { id = 3
+            , column = "todo"
+            , order = 3
             }
           )
         ]
@@ -97,9 +106,8 @@ update msg model =
     case msg of
         DragStart nodeId startPos ->
             ( { model
-                | dragState = Moving nodeId
+                | dragState = Moving nodeId startPos
                 , startPos = startPos
-                , cards = setPosition model.cards nodeId startPos
               }
             , Cmd.none
             )
@@ -111,11 +119,10 @@ update msg model =
             ( { model
                 | dragState =
                     if isDown then
-                        Moving nodeId
+                        Moving nodeId position
 
                     else
                         Static
-                , cards = setPosition model.cards nodeId position
               }
             , Cmd.none
             )
@@ -134,15 +141,28 @@ update msg model =
                 | cards = newCards
                 , dragState = Static
                 , inColumn = Nothing
+                , aboveCard = Nothing
               }
             , Cmd.none
             )
 
         ColumnEntered column ->
-            ( { model | inColumn = Just column }, Cmd.none )
+            let
+                newCards =
+                    case model.dragState of
+                        Static ->
+                            model.cards
+
+                        Moving nodeId _ ->
+                            setColumn model.cards nodeId column
+            in
+            ( { model | inColumn = Just column, cards = newCards }, Cmd.none )
+
+        CardEntered cardId ->
+            ( { model | aboveCard = Just cardId }, Cmd.none )
 
 
-setColumn : Cards -> NodeId -> Column -> Cards
+setColumn : Cards -> CardId -> Column -> Cards
 setColumn cards nodeId column =
     case findCard nodeId cards of
         Just card ->
@@ -152,22 +172,12 @@ setColumn cards nodeId column =
             cards
 
 
-setPosition : Cards -> NodeId -> Position -> Cards
-setPosition cards nodeId position =
-    case findCard nodeId cards of
-        Just card ->
-            insertCard nodeId { card | position = position } cards
-
-        Nothing ->
-            cards
-
-
-findCard : NodeId -> Cards -> Maybe TodoCard
+findCard : CardId -> Cards -> Maybe TodoCard
 findCard nodeId cards =
     Dict.get nodeId cards
 
 
-insertCard : NodeId -> TodoCard -> Cards -> Cards
+insertCard : CardId -> TodoCard -> Cards -> Cards
 insertCard nodeId card cards =
     Dict.insert nodeId card cards
 
@@ -204,7 +214,9 @@ viewCardsOfColumn : Model -> Column -> Html.Html Msg
 viewCardsOfColumn model column =
     let
         cardsOfColumn =
-            Dict.values model.cards |> List.filter (\card -> card.column == column)
+            Dict.values model.cards
+                |> List.filter (\card -> card.column == column)
+                |> List.sortBy .order
 
         classes =
             "card-column"
@@ -222,43 +234,35 @@ viewCardsOfColumn model column =
 viewTodoCard : DragState -> TodoCard -> Html.Html Msg
 viewTodoCard dragState card =
     let
-        classes =
-            "card"
-                ++ (if dragState == Moving card.id then
-                        " card-dragged"
-
-                    else
-                        ""
-                   )
-
-        dragging =
-            case dragState of
-                Static ->
-                    False
-
-                Moving nodeId ->
-                    nodeId == card.id
-    in
-    if dragging then
-        div []
-            [ div
-                [ class classes
-                , style "left" (String.fromFloat card.position.x ++ "px")
-                , style "top" (String.fromFloat card.position.y ++ "px")
+        cardInRest =
+            div
+                [ class "card"
+                , on "mousedown" (Decode.map (DragStart card.id) decodeClientPosition)
+                , onMouseEnter (CardEntered card.id)
                 ]
                 [ p [] [ text <| String.fromInt card.id ]
                 ]
-            , div [ class "card shadow-card" ]
-                []
-            ]
+    in
+    case dragState of
+        Moving nodeId position ->
+            if nodeId == card.id then
+                div []
+                    [ div
+                        [ class "card card-dragged"
+                        , style "left" (String.fromFloat position.x ++ "px")
+                        , style "top" (String.fromFloat position.y ++ "px")
+                        ]
+                        [ p [] [ text <| String.fromInt card.id ]
+                        ]
+                    , div [ class "card shadow-card" ]
+                        []
+                    ]
 
-    else
-        div
-            [ class classes
-            , on "mousedown" (Decode.map (DragStart card.id) decodeClientPosition)
-            ]
-            [ p [] [ text <| String.fromInt card.id ]
-            ]
+            else
+                cardInRest
+
+        Static ->
+            cardInRest
 
 
 
@@ -271,7 +275,7 @@ subscriptions model =
         Static ->
             Sub.none
 
-        Moving id ->
+        Moving id _ ->
             Sub.batch
                 [ Browser.Events.onMouseUp (Decode.succeed (DragStop id))
                 , Browser.Events.onMouseMove (Decode.map2 (DragMove id) decodeButtons decodePosition)
@@ -313,6 +317,7 @@ decodeClientY =
     Decode.field "clientY" Decode.float
 
 
+main : Program () Model Msg
 main =
     Browser.element
         { init = init
