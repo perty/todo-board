@@ -96,10 +96,6 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         DragStart nodeId startPos ->
-            let
-                _ =
-                    Debug.log "dragstart" msg
-            in
             ( { model
                 | dragState = Moving nodeId
                 , startPos = startPos
