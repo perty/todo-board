@@ -2,15 +2,14 @@
 
 Experimenting with a tech stack of Spring Boot and Elm to create a desktop application.
 
-When the user double-click the jar, a web server is started and a browser page is opened, pointing at [http://localhost:59092/](http://localhost:59092/).
+When the user double-clicks the jar, a web server is started and a browser page is opened, pointing at [http://localhost:59092/](http://localhost:59092/).
 
 This may or may not work, depending on the user's environment. If you want to distribute a Java desktop application to all kinds of computers, then you have some reading to do. :)
 
 ## Build instructions
 
 1. Create a distribution copy of it with  `npm run dist` in the `src/main/elm` directory.
-2. Go to top level directory and build the application with `mvn install`. The application
-   is `target/board-1.0.0.SNAPSHOT.jar` folder.
+2. Go to top level directory and build the application with `mvn install`. The application is `target/board-1.0.0.SNAPSHOT.jar`.
 
 ## Hot load development
 
