@@ -221,7 +221,7 @@ view : Model -> Html.Html Msg
 view model =
     div []
         [ div [ class "header" ]
-            [ p [] [ text "Something" ]
+            [ p [] [ text "Todo board with drag'n'drop" ]
             ]
         , div [ class "column-container" ]
             [ div [ class "column-head" ]
